@@ -49,19 +49,8 @@
                 </thread>
 
                 <tbody>
+                        <?php include "config.php" ?>
                         <?php
-                        $servername = "mariadb";
-                        $username = "";
-                        $password = "";
-                        $database = "";
-
-                        // Create connection
-                        $conn = new mysqli($servername, $username, $password, $database);
-
-                        if ($conn->connect_error) {
-                                die("Connection failed: " . $conn->connect_error);
-                        }
-
                         // read all row from database table
                         $sql = "SELECT * FROM Departments";
                         $result = $conn->query($sql);
