@@ -19,7 +19,7 @@
         <?php include "includes/nav.php" ?>
         <?php include "includes/header.php" ?>
 
-        <h1>List of Professors</h1>
+        <h1>List of Students</h1>
         <br>
         <table>
                 <thread>
