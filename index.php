@@ -35,23 +35,16 @@
         <?php include "includes/nav.php" ?>
         <?php include "includes/header.php" ?>
 
-        <h1>List of Professors</h1>
+        <h1>List of Departments</h1>
         <br>
         <table>
                 <thread>
                         <tr>
-                                <th>SSN</th>
+                                <th>DeptID</th>
                                 <th>Name</th>
-                                <th>Street</th>
-                                <th>City</th>
-                                <th>State</th>
-                                <th>Zip</th>
-                                <th>AreaCode</th>
                                 <th>Telephone</th>
-                                <th>Sex</th>
-                                <th>Title</th>
-                                <th>Salary</th>
-                                <th>Degrees</th>
+                                <th>OfficeLocation</th>
+                                <th>Chairperson</th>
                         </tr>
                 </thread>
 
@@ -70,7 +63,7 @@
                         }
 
                         // read all row from database table
-                        $sql = "SELECT * FROM Professors";
+                        $sql = "SELECT * FROM Departments";
                         $result = $conn->query($sql);
 
                         if (!$result) {
@@ -80,19 +73,62 @@
                         // read data of each row
                         while($row = $result->fetch_assoc()) {
                                 echo "<tr>
-                                        <td>" . $row[SSN] . "</td>
+                                        <td>" . $row[DeptID] . "</td>
                                         <td>" . $row[Name] . "</td>
-                                        <td>" . $row[Street] . "</td>
-                                        <td>" . $row[City] . "</td>
-                                        <td>" . $row[State] . "</td>
-                                        <td>" . $row[Zip] . "</td>
-                                        <td>" . $row[AreaCode] . "</td>
                                         <td>" . $row[Telephone] . "</td>
-                                        <td>" . $row[Sex] . "</td>
-                                        <td>" . $row[Title] . "</td>
-                                        <td>" . $row[Salary] . "</td>
-                                        <td>" . $row[Degrees] . "</td>
+                                        <td>" . $row[OfficeLocation] . "</td>
+                                        <td>" . $row[Chairperson] . "</td>
+                                </tr>";
+                        }
+                        ?>
+                </tbody>
+        </table>
 
+        <h1>List of Courses</h1>
+        <br>
+        <table>
+                <thread>
+                        <tr>
+                                <th>CourseID</th>
+                                <th>Title</th>
+                                <th>Textbook</th>
+                                <th>Units</th>
+                                <th>DeptID</th>
+                                <th>PrerequisiteID</th>
+                        </tr>
+                </thread>
+
+                <tbody>
+                        <?php
+                        $servername = "mariadb";
+                        $username = "";
+                        $password = "";
+                        $database = "";
+
+                        // Create connection
+                        $conn = new mysqli($servername, $username, $password, $database);
+
+                        if ($conn->connect_error) {
+                                die("Connection failed: " . $conn->connect_error);
+                        }
+
+                        // read all row from database table
+                        $sql = "SELECT * FROM Courses";
+                        $result = $conn->query($sql);
+
+                        if (!$result) {
+                                die("Invalid query: " . $conn->error);
+                        }
+
+                        // read data of each row
+                        while($row = $result->fetch_assoc()) {
+                                echo "<tr>
+                                        <td>" . $row[CourseID] . "</td>
+                                        <td>" . $row[Title] . "</td>
+                                        <td>" . $row[Textbook] . "</td>
+                                        <td>" . $row[Units] . "</td>
+                                        <td>" . $row[DeptID] . "</td>
+                                        <td>" . $row[PrerequisiteID] . "</td>
                                 </tr>";
                         }
                         ?>
