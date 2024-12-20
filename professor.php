@@ -84,6 +84,8 @@
 
                                 </tr>";
                         }
+                        // Close the database connection
+                        $conn->close();
                         ?>
                 </tbody>
         </table>
