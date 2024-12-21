@@ -39,9 +39,9 @@
 
         <h1>Section Info</h1>
         <br>
-        <form method="POST">
-            <label for="courseNum">Enter Course Number:</label>
-            <input type="text" id="courseNum" name="courseNum" required>
+        <form method="GET">
+            <label for="CourseID">Enter Course Number:</label>
+            <input type="number" id="CourseID" name="CourseID" required>
             <button type="submit">Submit</button>
         </form>
         <br>
@@ -58,50 +58,46 @@
             </thead>
 
             <tbody>
+                <?php include "config.php"?>
                 <?php 
-                if (isset($_POST['courseNum'])) {
-                    include "config.php"; // Assuming this file sets up the $conn variable
+                if (isset($_GET['CourseID'])) {
+                    $courseID = $_GET['CourseID'];
 
-                    $courseNum = $_POST['courseNum'];
+                    // Query to get sections and number of students enrolled
+                    $sql = "
+                    SELECT 
+                        s.SectionID, 
+                        s.Classroom, 
+                        s.MeetingDays, 
+                        s.StartTime, 
+                        s.EndTime, 
+                        COUNT(e.StudentID) AS EnrolledStudents
+                    FROM Sections s
+                    LEFT JOIN Enrollment e ON s.SectionID = e.SectionID
+                    WHERE s.CourseID = :courseID
+                    GROUP BY s.SectionID, s.Classroom, s.MeetingDays, s.StartTime, s.EndTime
+                    ORDER BY s.SectionNumber
+                    ";
 
-                    $sql = "SELECT 
-                                Sections.SectionNumber,
-                                Sections.Classroom,
-                                Sections.MeetingDays,
-                                Sections.StartTime,
-                                Sections.EndTime,
-                                COUNT(Enrollments.EnrollmentID) AS NumberOfStudents
-                            FROM 
-                                Sections
-                            LEFT JOIN 
-                                Enrollments ON Sections.SectionNumber = Enrollments.SectionNumber
-                            WHERE 
-                                Sections.CourseNumber = ?
-                            GROUP BY 
-                                Sections.SectionNumber, Sections.Classroom, Sections.MeetingDays, Sections.StartTime, Sections.EndTime";
+                    // Prepare and execute the query
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute(['courseID' => $courseID]);
 
-                    // Prepare and execute the statement
-                    $stmt = $conn->prepare($sql);
-                    $stmt->bind_param("s", $courseNum); // 's' means it's a string
-                    $stmt->execute();
-                    $result = $stmt->get_result();
-
-                    if ($result->num_rows > 0) {
-                        while ($row = $result->fetch_assoc()) {
-                            echo "<tr>
-                                    <td>" . $row['SectionNumber'] . "</td>
-                                    <td>" . $row['Classroom'] . "</td>
-                                    <td>" . $row['MeetingDays'] . "</td>
-                                    <td>" . $row['StartTime'] . "</td>
-                                    <td>" . $row['EndTime'] . "</td>
-                                    <td>" . $row['NumberOfStudents'] . "</td>
-                                  </tr>";
-                        }
-                    } else {
-                        echo "<tr><td colspan='6'>No sections found for this course.</td></tr>";
+                     // Fetch and display results       
+                    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                        echo "<tr>
+                                <td>{$row['SectionID']}</td>
+                                <td>{$row['Classroom']}</td>
+                                <td>{$row['MeetingDays']}</td>
+                                <td>{$row['StartTime']}</td>
+                                <td>{$row['EndTime']}</td>
+                                <td>{$row['EnrolledStudents']}</td>
+                              </tr>";
                     }
 
                     $stmt->close();
+                } else {
+                    echo "<p>Please provide a course ID to view sections.</p>";
                 }
                 ?>
             </tbody>
@@ -109,9 +105,9 @@
 
         <h1>Student Info</h1>
         <br>
-        <form method="POST">
+        <form method="GET">
             <label for="studentID">Enter Student ID:</label>
-            <input type="text" id="studentID" name="studentID" required>
+            <input type="number" id="studentID" name="studentID" required>
             <button type="submit">Submit</button>
         </form>
         <br>
@@ -125,10 +121,10 @@
 
             <tbody>
                 <?php 
-                if (isset($_POST['studentID'])) {
+                if (isset($_GET['studentID'])) {
                     include "config.php"; // Assuming this file sets up the $conn variable
 
-                    $studentID = $_POST['studentID'];
+                    $studentID = $_GET['studentID'];
 
                     $sql = "SELECT 
                                 Courses.Title AS CourseTitle,
@@ -138,7 +134,7 @@
                             JOIN 
                                 Sections ON Enrollments.SectionNumber = Sections.SectionNumber
                             JOIN 
-                                Courses ON Sections.CourseNumber = Courses.CourseNumber
+                                Courses ON Sections.CourseIDber = Courses.CourseIDber
                             WHERE 
                                 Enrollments.CampusWideID = ?";
 
