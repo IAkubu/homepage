@@ -38,9 +38,9 @@
         <?php
             // Establish the database connection
             $servername = "mariadb";
-            $username = "your_username";  // Add your DB username
-            $password = "your_password";  // Add your DB password
-            $database = "your_database";  // Add your DB name
+            $username = "cs332f23";  // Add your DB username
+            $password = "3Hx3dt9H";  // Add your DB password
+            $database = "cs332f23";  // Add your DB name
 
             // Create connection
             $conn = new mysqli($servername, $username, $password, $database);
@@ -53,9 +53,9 @@
         <h1>Professor Class Info</h1>
         <br>
 
-        <form method="POST">
-            <label for="pSSN">Enter Professor SSN:</label>
-            <input type="text" id="pSSN" name="pSSN" required>
+        <form method="GET">
+            <label for="SSN">Enter Professor SSN:</label>
+            <input type="text" id="SSN" name="SSN" required>
             <button type="submit">Submit</button>
         </form>
         <br>
@@ -73,22 +73,16 @@
 
             <tbody>
                 <?php
-                    if (isset($_POST['pSSN'])) {
-                        $pSSN = $_POST['pSSN'];
+                    if (isset($_GET['SSN'])) {
+                        $pSSN = $_GET['SSN'];
 
-                        $sql = "SELECT 
-                                    Courses.Title AS CourseTitle,
-                                    Sections.Classroom,
-                                    Sections.MeetingDays,
-                                    Sections.StartTime,
-                                    Sections.EndTime
-                                FROM 
-                                    Sections
-                                JOIN 
-                                    Courses ON Sections.CourseNumber = Courses.CourseNumber
-                                WHERE 
-                                    Sections.ProfessorSSN = ?";
-                        
+                        $sql = "
+                                SELECT c.Title, s.Classroom, s.MeetingDays, s.StartTime, s.EndTime
+                                FROM Professors p
+                                JOIN Sections s ON p.SSN = s.ProfessorID
+                                JOIN Courses c ON s.CourseID = c.CourseID
+                                WHERE p.SSN = ?";
+
                         // Prepare and execute the statement
                         $stmt = $conn->prepare($sql);
                         $stmt->bind_param("s", $pSSN);  // 's' means the parameter is a string
@@ -98,7 +92,7 @@
                         if ($result->num_rows > 0) {
                             while($row = $result->fetch_assoc()) {
                                 echo "<tr>
-                                        <td>" . $row['CourseTitle'] . "</td>
+                                        <td>" . $row['Title'] . "</td>
                                         <td>" . $row['Classroom'] . "</td>
                                         <td>" . $row['MeetingDays'] . "</td>
                                         <td>" . $row['StartTime'] . "</td>
@@ -115,61 +109,71 @@
             </tbody>
         </table>
 
-        <h1>Professor Grade Info</h1>
+        <h1>Professor Grade Distribution</h1>
         <br>
 
-        <form method="POST">
-            <label for="courseNum">Enter Course Number:</label>
-            <input type="text" id="courseNum" name="courseNum" required>
-            <label for="sectionNum">Enter Section Number:</label>
-            <input type="text" id="sectionNum" name="sectionNum" required>
+        <form method="GET">
+            <label for="CourseID">Enter Course Number:</label>
+            <input type="number" id="CourseID" name="CourseID" required>
+            <label for="SectionID">Enter Section Number:</label>
+            <input type="number" id="SectionID" name="SectionID" required>
             <button type="submit">Submit</button>
         </form>
         <br>
 
         <table>
             <thead>
-                <tr>
-                    <th>Grade</th>
-                    <th>Count</th>
-                </tr>
+                <th>Grade</th>
+                <th>Number of Students</th>
             </thead>
-
             <tbody>
+                <?php include "config.php"?>
                 <?php
-                    if (isset($_POST['courseNum']) && isset($_POST['sectionNum'])) {
-                        $courseNum = $_POST['courseNum'];
-                        $sectionNum = $_POST['sectionNum'];
+                    if (isset($_GET['CourseID']) && isset($_GET['SectionID'])) {
+                        $courseID = intval($_GET['CourseID']);
+                        $sectionID = intval($_GET['SectionID']);
 
-                        $sql = "SELECT 
-                                    Grade,
-                                    COUNT(*) AS NumberOfStudents
-                                FROM 
-                                    Enrollments
-                                WHERE 
-                                    SectionNumber = ? AND CourseNumber = ?
-                                GROUP BY 
-                                    Grade";
-                        
-                        // Prepare and execute the statement
-                        $stmt = $conn->prepare($sql);
-                        $stmt->bind_param("ss", $sectionNum, $courseNum);  // 'ss' means both parameters are strings
+                        $sql = "
+                                SELECT Grade, COUNT(*) AS grade_count
+                                FROM Enrollment e
+                                JOIN Sections s ON e.SectionID = s.SectionID
+                                WHERE s.CourseID = ? AND s.SectionID = ?
+                                GROUP BY Grade
+                                ORDER BY FIELD(Grade, 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'F');
+                                ";
+
+                        // Prepare and bind
+                        if ($stmt = $conn->prepare($sql)) {
+                        $stmt->bind_param("ii", $courseID, $sectionID);
                         $stmt->execute();
+
+
+                        // Get the result
                         $result = $stmt->get_result();
 
                         if ($result->num_rows > 0) {
-                            while($row = $result->fetch_assoc()) {
+                                echo "<h3>Grade Distribution for Course ID: $courseID, Section: $sectionID</h3>";
+                        while ($row = $result->fetch_assoc()) {
                                 echo "<tr>
-                                        <td>" . $row['Grade'] . "</td>
-                                        <td>" . $row['NumberOfStudents'] . "</td>
+                                        <td>" . htmlspecialchars($row['Grade']) . "</td>
+                                        <td>" . htmlspecialchars($row['grade_count']) . "</td>
                                     </tr>";
-                            }
+                        }
+                            echo "</table>";
                         } else {
-                            echo "<tr><td colspan='2'>No grade data available for this course/section.</td></tr>";
+                            echo "<p>No students found for this course and section.</p>";
                         }
 
+                        // Close the statement
                         $stmt->close();
+                    } else {
+                        echo "<p>Error in the query.</p>";
                     }
+                } else {
+                    echo "Please enter a valid Course ID and Section ID.";
+                }
+                        // Close the database connection
+                        $conn->close();
                 ?>
             </tbody>
         </table>
@@ -179,3 +183,4 @@
         <script src="javascript/script.js"></script>
     </body>
 </html>
+
