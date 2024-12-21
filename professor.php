@@ -35,20 +35,7 @@
         <?php include "includes/nav.php" ?>
         <?php include "includes/header.php" ?>
 
-        <?php
-            // Establish the database connection
-            $servername = "mariadb";
-            $username = "cs332f23";  // Add your DB username
-            $password = "3Hx3dt9H";  // Add your DB password
-            $database = "cs332f23";  // Add your DB name
-
-            // Create connection
-            $conn = new mysqli($servername, $username, $password, $database);
-
-            if ($conn->connect_error) {
-                die("Connection failed: " . $conn->connect_error);
-            }
-        ?>
+        <?php include "config.php" ?>
 
         <h1>Professor Class Info</h1>
         <br>
