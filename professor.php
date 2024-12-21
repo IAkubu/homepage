@@ -105,6 +105,7 @@
 
                         $stmt->close();
                     }
+                    $conn->close();
                 ?>
             </tbody>
         </table>
@@ -172,8 +173,8 @@
                 } else {
                     echo "Please enter a valid Course ID and Section ID.";
                 }
-                        // Close the database connection
-                        $conn->close();
+                // Close the database connection
+                $conn->close();
                 ?>
             </tbody>
         </table>
