@@ -59,45 +59,56 @@
 
             <tbody>
                 <?php include "config.php"?>
-                <?php 
+                <?php
                 if (isset($_GET['CourseID'])) {
                     $courseID = $_GET['CourseID'];
 
                     // Query to get sections and number of students enrolled
                     $sql = "
-                    SELECT 
-                        s.SectionID, 
-                        s.Classroom, 
-                        s.MeetingDays, 
-                        s.StartTime, 
-                        s.EndTime, 
-                        COUNT(e.StudentID) AS EnrolledStudents
-                    FROM Sections s
-                    LEFT JOIN Enrollment e ON s.SectionID = e.SectionID
-                    WHERE s.CourseID = :courseID
-                    GROUP BY s.SectionID, s.Classroom, s.MeetingDays, s.StartTime, s.EndTime
-                    ORDER BY s.SectionNumber
-                    ";
+                        SELECT
+                                s.SectionID,
+                                s.SectionNumber,
+                                s.Classroom,
+                                s.MeetingDays,
+                                s.StartTime,
+                                s.EndTime,
+                        COUNT(e.StudentID) AS StudentsEnrolled
+                        FROM
+                                Sections s
+                        JOIN
+                                Courses c ON s.CourseID = c.CourseID
+                        LEFT JOIN
+                                Enrollment e ON s.SectionID = e.SectionID
+                        WHERE
+                                c.CourseID = ?
+                        GROUP BY
+                                s.SectionID;
+                        ";
 
-                    // Prepare and execute the query
-                    $stmt = $pdo->prepare($sql);
-                    $stmt->execute(['courseID' => $courseID]);
+                    // Prepare and bind parameters
+                    $stmt = $conn->prepare($sql);
+                    $stmt->bind_param("i", $courseID); // "i" denotes an integer parameter
 
-                     // Fetch and display results       
-                    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    // Get the result
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+
+                    // Display the sections for the given course
+                    echo "<h2>Sections for Course ID: $courseID</h2>";
+
+                    // Loop through the results and display each section
+                    while ($row = $result->fetch_assoc()) {
                         echo "<tr>
-                                <td>{$row['SectionID']}</td>
-                                <td>{$row['Classroom']}</td>
-                                <td>{$row['MeetingDays']}</td>
-                                <td>{$row['StartTime']}</td>
-                                <td>{$row['EndTime']}</td>
-                                <td>{$row['EnrolledStudents']}</td>
-                              </tr>";
+                            <td>" . $row['SectionNumber'] . "</td>
+                            <td>" . $row['Classroom'] . "</td>
+                            <td>" . $row['MeetingDays'] . "</td>
+                            <td>" . $row['StartTime'] . "</td>
+                            <td>" . $row['EndTime'] . "</td>
+                            <td>" . $row['StudentsEnrolled'] . "</td>
+                          </tr>";
                     }
 
                     $stmt->close();
-                } else {
-                    echo "<p>Please provide a course ID to view sections.</p>";
                 }
                 ?>
             </tbody>
@@ -106,37 +117,48 @@
         <h1>Student Info</h1>
         <br>
         <form method="GET">
-            <label for="studentID">Enter Student ID:</label>
-            <input type="number" id="studentID" name="studentID" required>
+            <label for="StudentID">Enter Student ID:</label>
+            <input type="text" id="StudentID" name="StudentID" required>
             <button type="submit">Submit</button>
         </form>
         <br>
         <table>
             <thead>
                 <tr>
-                    <th>Courses</th>
-                    <th>Grades</th>
+                    <th>Course Title</th>
+                    <th>Professor</th>
+                    <th>Grade</th>
                 </tr>
             </thead>
 
             <tbody>
-                <?php 
-                if (isset($_GET['studentID'])) {
+                <?php
+                if (isset($_GET['StudentID'])) {
                     include "config.php"; // Assuming this file sets up the $conn variable
 
-                    $studentID = $_GET['studentID'];
+                    $studentID = $_GET['StudentID'];
 
-                    $sql = "SELECT 
-                                Courses.Title AS CourseTitle,
-                                Enrollments.Grade
-                            FROM 
-                                Enrollments
-                            JOIN 
-                                Sections ON Enrollments.SectionNumber = Sections.SectionNumber
-                            JOIN 
-                                Courses ON Sections.CourseIDber = Courses.CourseIDber
-                            WHERE 
-                                Enrollments.CampusWideID = ?";
+                    // Query to get student details along with course and grade
+                    $sql = "
+                        SELECT
+                            c.Title AS course_title,
+                            e.Grade AS grade,
+                            p.Name AS professor_name
+                        FROM
+                            Enrollment e
+                        JOIN
+                            Sections s ON e.SectionID = s.SectionID
+                        JOIN
+                            Courses c ON s.CourseID = c.CourseID
+                        JOIN
+                            Professors p ON s.ProfessorID = p.SSN
+                        WHERE
+                            e.StudentID = ?
+                        ORDER BY
+                            c.Title;
+                        ";
+
+
 
                     // Prepare and execute the statement
                     $stmt = $conn->prepare($sql);
@@ -145,11 +167,13 @@
                     $result = $stmt->get_result();
 
                     if ($result->num_rows > 0) {
+                        // Display results in a table
                         while ($row = $result->fetch_assoc()) {
-                            echo "<tr>
-                                    <td>" . $row['CourseTitle'] . "</td>
-                                    <td>" . $row['Grade'] . "</td>
-                                  </tr>";
+                        echo "<tr>
+                                <td>" . htmlspecialchars($row['course_title']) . "</td>
+                                <td>" . htmlspecialchars($row['professor_name']) . "</td>
+                                <td>" . htmlspecialchars($row['grade']) . "</td>
+                                </tr>";
                         }
                     } else {
                         echo "<tr><td colspan='2'>No courses found for this student.</td></tr>";
@@ -157,6 +181,7 @@
 
                     $stmt->close();
                 }
+                    $conn->close();
                 ?>
             </tbody>
         </table>
